@@ -1,193 +1,96 @@
 <!DOCTYPE html>
-<!-- HIDE -->
-<!-- <canvas width="960" height="600"></cavnas> -->
-<!-- ADD -->
+
 <svg></svg>
 
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://unpkg.com/topojson-client@2"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
 <script src="versor.js"></script>
 <script>
 
-//ADD
-var width = 960,
-    height = 500;
-    r = 250;
+var width = 650,
+    height = 650;
 
-//ADD
 var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-// // //HIDE
-// var canvas = d3.select("canvas"),
-//     width = canvas.property("width"),
-//     height = canvas.property("height"),
-//     context = canvas.node().getContext("2d");
-
 var projection = d3.geoOrthographic()
-    .scale((height - 10) / 2)
+    .scale((height) / 2)
     .translate([width / 2, height / 2])
-    .precision(0.1)
-    // .clipAngle(90)
 
 var path = d3.geoPath()
     .projection(projection)
-    // .context(context); //HIDE
 
-// // //HIDE
-// canvas.call(d3.drag()
-//     .on("start", dragstarted)
-//     .on("drag", dragged));
+queue()
+    .defer(d3.json, "https://raw.githubusercontent.com/kausgang/interactive_world_map/master/ne_110m_admin_0_countries.json")
+    .defer(d3.json, "https://raw.githubusercontent.com/kausgang/interactive_world_map/master/ne_110m_ocean.json")
+    .await(ready);
 
-//ADD
-var dragHandler = d3.drag()
-    .on("start", dragstarted)
-    .on("drag", dragged);
+function ready(error,world,ocean){ //ARGUMENTS HERE WILL BE IN ORDER OF THE DEFER STATEMENTS ABOVE
 
+    if (error) throw error;
 
+    var countries = topojson.feature(world,world.objects.ne_110m_admin_0_countries).features;
+    var water = topojson.feature(ocean,ocean.objects.ne_110m_ocean).features;
+    console.log(countries)
 
-//ADD
-    svg.append("circle")
-        .attr("cx", width / 2).attr("cy", height / 2)
-        .attr("r", 245)
-        .style("fill", "none")
-        .attr("stroke","black")
-        .attr("stroke-width",1)
-    //     .on("click",function(){
-
-    //     var coordinate = d3.mouse(this);
-    //     var x = coordinate[0];
-    //     var y = coordinate[1];
-         
-    //     var center_x = width /2;
-    //     var center_y = height/2;
-    //     // console.log(center_x);
-    //     var r = 245;
-
-    //     // if(x >= (center_x - r) && x <= (center_x + r)){ //you have clicked inside the circle
-
-    //         // notify(null)
-    //         console.log("c");
-
-    //     // }             
-    // })
-
-
-
-
-
-var render = function() {},
-    v0, // Mouse position in Cartesian coordinates at start of drag gesture.
-    r0, // Projection rotation as Euler angles at start.
-    q0; // Projection rotation as versor at start.
-
-
-
-function dragstarted() {
-
-    // console.log(d3.mouse(this));
-
-    
-  v0 = versor.cartesian(projection.invert(d3.mouse(this)));
-  r0 = projection.rotate();
-  q0 = versor(r0);
-
-    
-
-    // var x = this.getAttribute("class"); //return the country name
-    // if(x=='')
-    //     alert("x")
-    // else
-    //     console.log(x)
-
-}
-
-function dragged() {
-  var v1 = versor.cartesian(projection.rotate(r0).invert(d3.mouse(this))),
-      q1 = versor.multiply(q0, versor.delta(v0, v1)),
-      r1 = versor.rotation(q1);
-
-// console.log(v1,r1,q1);
-
-
-  projection.rotate(r1);
-  svg.selectAll("path").attr("d", path);
-//   render();
-}
-
-
-
-
-
-
-
-
-
-
-//ADD
-  d3.json("https://raw.githubusercontent.com/kausgang/interactive_world_map/master/ne_110m_admin_0_countries.json", function(error, world){
-
-if (error) throw error;
-
-console.log(world)
-//  var countries = topojson.feature(world,world.objects.countries);
-var countries = topojson.feature(world,world.objects.ne_110m_admin_0_countries).features;
-
-
-    // render = function(){
-        
+    //OCEANS
         svg
-        //   .append("g")
+          .selectAll("g")
+          .data(water)
+          .enter()
+          .append("path")
+          .attr("d",path)
+          .attr("fill","#abcdef") //to show the land
+          .attr("stroke","#000000") //to divide the countries
+    
+    //COUNTRIES    
+        svg
           .selectAll("g")
           .data(countries)
           .enter()
           .append("path")
           .attr("class",function(d){
-
               //add the country name in class attribute so that later it can be retrieved
-              
               return d.properties.BRK_NAME;
           })
           .attr("d",path)
-          .attr("fill","#abcdef") //to show the land
-          .attr("stroke","#000000") //to divide the countries
+          .attr("fill","#ffffff") //to show the land
+          .attr("stroke","#565456") //to divide the countries  
           .on("click",function(d){
-              console.log(this);
-              var x = this.getAttribute("class"); //return the country name
-              console.log(x)
-                // alert(x);
-       
-          })
-    // }
-    
-          
-          // ADD
-            // render();
+                var x = this.getAttribute("class"); //return the country name
+            //  console.log(x)
+                alert(x);
+          })    
 
           dragHandler(svg.selectAll("path"));
+}
 
 
-
-});
-
-
- 
+var dragHandler = d3.drag()
+    .on("start", dragstarted)
+    .on("drag", dragged);
 
 
+function dragstarted() {
 
+    v0 = versor.cartesian(projection.invert(d3.mouse(this)));
+    r0 = projection.rotate();
+    q0 = versor(r0);
 
+}
 
+function dragged() {
+    var v1 = versor.cartesian(projection.rotate(r0).invert(d3.mouse(this))),
+    q1 = versor.multiply(q0, versor.delta(v0, v1)),
+    r1 = versor.rotation(q1);
 
-
-
-
-
-
-
-
-
-
+    projection.rotate(r1);
+    
+    // UPDATE PATH 
+    svg.selectAll("path").attr("d", path);
+}
 
 
 </script>
