@@ -33,7 +33,7 @@ function ready(error,world,ocean){ //ARGUMENTS HERE WILL BE IN ORDER OF THE DEFE
 
     var countries = topojson.feature(world,world.objects.ne_110m_admin_0_countries).features;
     var water = topojson.feature(ocean,ocean.objects.ne_110m_ocean).features;
-    console.log(countries)
+    // console.log(countries)
 
     //OCEANS
         svg
@@ -64,7 +64,9 @@ function ready(error,world,ocean){ //ARGUMENTS HERE WILL BE IN ORDER OF THE DEFE
                 alert(x);
           })    
 
+          //SEND ALL PATHS TO DRAG HANDLER
           dragHandler(svg.selectAll("path"));
+        
 }
 
 
